@@ -1,4 +1,5 @@
 from airflow import DAG
+
 from airflow.operators.bash_operator import BashOperator
 from datetime import datetime, timedelta
 
@@ -17,14 +18,24 @@ default_args = {
 dag = DAG('tpot', default_args=default_args)
 
 # A task must have owner and task_id arguments
+
+# Task One for tagging the csv in the s3 bucket for reference
 task_one = BashOperator(
-    task_id='print_date',
-    bash_command='date',
+    task_id='tag_csv',
+    bash_command='',
     dag=dag)
 
+# Task Two for converting the file in s3 to the Transactional DB
 task_two = BashOperator(
-    task_id='sleep',
-    bash_command='sleep 5',
+    task_id='s3_tdb',
+    bash_command='',
+    retries=3,
+    dag=dag)
+
+# Task Three for starting the analysis engine run by Abacus
+task_three = BashOperator(
+    task_id='abacus_analysis',
+    bash_command='',
     retries=3,
     dag=dag)
 
@@ -36,11 +47,13 @@ templated_command = """
     {% endfor %}
 """
 
-task_three = BashOperator(
-    task_id='templated',
+# Task Four triggered by an API query whose data request is not in the TDB
+# thereby triggering task three with particular parameters
+task_four = BashOperator(
+    task_id='api_query',
     bash_command=templated_command,
     params={'my_param': "Parameter I passed in"},
     dag=dag)
 
-task_two.set_upstream(task_one)
-task_three.set_upstream(task_one)
+task_three.set_upstream(task_two)
+task_four.set_upstream(task_three)

@@ -16,11 +16,11 @@ jobs:
             curl -L -o /tmp/docker-$VER.tgz https://get.docker.com/builds/Linux/x86_64/docker-$VER.tgz
             tar -xz -C /tmp -f /tmp/docker-$VER.tgz
             mv /tmp/docker/* /usr/bin
-      - restore_cache:
-          keys:
-          - v1-dependencies-{{ checksum "requirements.txt" }}
-          # fallback to using the latest cache if no exact match is found
-          - v1-dependencies-
+    #   - restore_cache:
+    #       keys:
+    #       - v1-dependencies-{{ checksum "requirements.txt" }}
+    #       # fallback to using the latest cache if no exact match is found
+    #       - v1-dependencies-
       - run:
           name: Install Python deps
           command: |
@@ -35,6 +35,26 @@ jobs:
       - run:
           name: Install Heroku CLI
           command: wget -qO- https://cli-assets.heroku.com/install-ubuntu.sh | sh
+      - run:
+          name: Install Habitat
+          command: |
+            wget https://api.bintray.com/content/habitat/stable/linux/x86_64/hab-%24latest-x86_64-linux.tar.gz?bt_package=hab-x86_64-linux
+            tar xvzf hab*
+            cd hab*/ && cp hab /usr/local/bin
+      - run:
+          name: Install Ruby
+          command: apt-get install ruby-full
+      - run:
+          name: Install Chef
+          command: |
+            wget https://packages.chef.io/files/stable/chef/13.4.24/ubuntu/16.04/chef_13.4.24-1_amd64.deb
+            apt-get install *.deb
+      - run:
+          name: Test Chef, Hab, ruby
+          command: |
+            chef
+            hab
+            ruby -e print 1+1
       - run:
           name: Deploy to Heroku
           command: |

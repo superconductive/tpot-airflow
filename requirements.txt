@@ -1,1 +1,1 @@
-airflow[all]==1.8.0
+apache-airflow[s3]==1.8.2
